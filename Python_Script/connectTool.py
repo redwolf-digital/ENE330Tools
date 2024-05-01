@@ -29,6 +29,8 @@ Linux user :
         - pip install matplotlib
         - pip install telnetlib3
 """
+# system and module import
+import platform
 
 
 class textColor :
@@ -42,9 +44,6 @@ class textColor :
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-
-# system and module import
-import platform
 
 try :
     import numpy as np
@@ -66,61 +65,12 @@ try :
 except ImportError as e :
     print(textColor.FAIL + e," : NOT INSTALL!" + textColor.ENDC)
     exit()   
-
-
+    
+print()
+print("\n[SYSTEM] -> initialize done\n" + textColor.OKCYAN + "current python version : ", platform.python_version() + textColor.ENDC, "\n")
 
 
 import random   # Test only
-
-
-ipTable = {
-        1 : "192.168.1.10",
-        2 : "192.168.1.11",
-        3 : "192.168.1.12",
-        4 : "192.168.1.13",
-        5 : "192.168.1.14",
-}
-
-
-# function
-# function for connect to Cora board
-def connectBoard(boardID, port = 7) :
-    """
-    this functions used for connect to network
-    return  1 - when connect successful
-            0 - when connect fail
-    """
-
-    ## code for connect TCP/IP
-    if(boardID == 0) :
-        telnetlib.Telnet(ipTable[0], 23, timeout=1000)
-
-    else :
-        telnetlib.Telnet(ipTable[boardID], port, timeout=1000)
-
-
-# function for main task
-def mainProcess(connFlag, buffSize, temp) :
-    packetCounter = 0
-    while(connFlag == 1) :
-            # required data from Cora board and put it in buffer
-            temp = np.empty((0, 0))            # clear buffer
-
-
-            # test case add data to buffer
-            for i in range(buffSize) :
-                n = int(random.randint(0, 65535))
-                temp = np.append(temp, [n])
-
-            packetCounter = packetCounter + 1
-            print("Packet count : ", packetCounter)
-
-            plt.clf()
-            plt.title("Packet Count : " + str(packetCounter))
-            plt.xlabel("smaple block")
-            plt.ylabel("value of sample")
-            plt.plot(temp)
-            plt.pause(1)
 
 
 # function for check in put is integer or not (I hate dynamic variable type ;w;)
@@ -138,79 +88,128 @@ def dashline() :
 
 
 
+#------------------------------------------------------------------------------------
+#                                      Variable
+#------------------------------------------------------------------------------------
 
+ipLUT = {
+        1 : "192.168.1.10",
+        2 : "192.168.1.11",
+        3 : "192.168.1.12",
+        4 : "192.168.1.13",
+        5 : "192.168.1.14",
+}
 
-
-
+memTemp = np.array([])      # data is here
 
 
 
 #------------------------------------------------------------------------------------
 #                                      main script
 #------------------------------------------------------------------------------------
+
+def terminalInput() :
+    return input(textColor.OKBLUE + ">> " + textColor.ENDC)
+
+
+def mainProcess(dataArrIn, boardTargetID_t) :
+    
+    max_buffsize = 64
+    
+    # required data from Cora board and put it in buffer
+    dataArrIn = np.empty((0, 0))            # clear buffer
+    
+    # Telnet SEND RTS
+
+    # Telnet WAIT CTS
+
+    # Rx data from Cora
+
+    # process data
+
+    # test case add data to buffer
+    for i in range(max_buffsize) :
+        n = int(random.randint(0, 65535))
+        dataArrIn = np.append(dataArrIn, [n])
+
+    print(f"[SYSTEM] -> OPERATOR REQ. ID {str(boardTargetID_t)} DONE")
+
+    plt.clf()
+    plt.title("Data of Board ID " + str(boardTargetID_t))
+    plt.xlabel("sample")
+    plt.ylabel("value of sample")
+    plt.xlim([0, max_buffsize])
+    
+    plt.plot(dataArrIn)
+    plt.pause(1)
+
+    
+
 def main() :
-    print(textColor.OKCYAN + "current python version : ", platform.python_version() + textColor.ENDC, "\n")
+    global connComplet
+    global boardTargetID
+    
+    connComplet = 0
 
-    NET_PORT = 7
-    Net_connFlag = 0
-    max_buffsize = 130
-
-
-    memTemp = np.array([])    # buffer for save dump memory data form SoCs.
 
 
     try :
-        # conditions make sure no idiot one input the system doesn't need
-        while(Net_connFlag == 0) :
+        while connComplet == 0 :
 
-            BoardTargetID = input("Command or Connect to board ID ?\n>> ")
-
-
-            if isInt(BoardTargetID) == False :
-                if  BoardTargetID == "-l" or BoardTargetID == "list" :
+            commandInput = terminalInput()
+            comm_buff = commandInput.split(" ")
+            
+            if isInt(commandInput) == False :
+                # list Board ID and Board IP
+                if commandInput == '--l' or commandInput == 'list' :
                     dashline()
-                    for i in range(len(ipTable)) :
-                        print(f"[board ID] {i+1} IP : {ipTable[i+1]}")
+                    for i in range(len(ipLUT)) :
+                        print(f"[board ID] {i+1} IP : {ipLUT[i+1]}")
                     dashline()
 
-                elif BoardTargetID == "--h" or BoardTargetID == "help":
+                # help
+                elif commandInput == "--h" or commandInput == "help" :
                         dashline()
-                        print("--h or help\t Help menu\n-l or list\t Show all board list\n\n press \"Ctrl+C\" for exit program")
+                        print("--h or help\t\t\t Help menu\n--l or list\t\t\t Show all board list\n-cID <1-5> or connectID <1-5>\t connect to target board\n\n press \"Ctrl+C\" for exit program")
                         dashline()
+
+                # Connect board
+                elif comm_buff[0] == "-cID" or comm_buff[0] == "connectID" :
+                    if isInt(comm_buff[1]) == True :
+                        if int(comm_buff[1]) > 0 and int(comm_buff[1]) <= 5 :
+                            boardTargetID = int(comm_buff[1])
+                            connComplet = 1
+                            print(textColor.WARNING + "[SYSTEM] -> EXIT COMMAND MODE\n----> PRESS \"Ctrl+C\" FOR EXIT PROGRAMS <----" + textColor.ENDC)
+                        else :
+                            print(textColor.FAIL + "OUT OF RANGE" + textColor.ENDC)
+                    else :
+                        print(textColor.FAIL + "ERROR" + textColor.ENDC)
+
+                # Bro wrong command
                 else :
-                    print(textColor.FAIL + "COMMAND NOT FOUND OR INPUT INTEGER ONLY" + textColor.ENDC)
-
+                    print(textColor.FAIL + "COMMAND NOT FOUND" + textColor.ENDC)
 
             else :
-                if int(BoardTargetID) > 0 and int(BoardTargetID) <= 5 :
-                    # connect internet here
+                print(textColor.FAIL + "COMMAND NOT FOUND" + textColor.ENDC)
 
 
+        while connComplet == 1 :
+            try :
+                mainProcess(memTemp, boardTargetID)
+
+                
+            except KeyboardInterrupt :
+                print(textColor.FAIL + "- Glory to Mankind -" + textColor.ENDC)
+                raise SystemExit
 
 
-
-                    print(textColor.WARNING + "----> PRESS \"Ctrl+C\" FOR EXIT PROGRAMS <----" + textColor.ENDC)
-                    # set flag to 1 if connect succeed
-                    Net_connFlag = 1
-
-                else :
-                    print(textColor.FAIL + "OUT OF RANGE" + textColor.ENDC)
-            
-
-        
-
-
-
-        # connect Cora board succeed
-        # run main process
-        mainProcess(Net_connFlag, max_buffsize, memTemp)
-
-    
     except KeyboardInterrupt :
-        print(textColor.FAIL + "ADIOS" + textColor.ENDC)
+        print(textColor.FAIL + "- Glory to Mankind -" + textColor.ENDC)
         raise SystemExit
 
 
 #optimize python script     
 if __name__ == "__main__" :
     main()
+    
+

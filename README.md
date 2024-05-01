@@ -21,7 +21,7 @@ pip install matplotlib
 pip install telnetlib3
 ```
 ### how to run script
-for **Windows** used CMD, Terminal or Windows PowerShell
+for **Windows** used CMD, Terminal or Windows PowerShell or any terminal software
 ```cli
 py .\connectTool.py
 ```
@@ -39,3 +39,10 @@ or
 ```cli
 python connectTool.py
 ```
+### command
+| command | Descriptions |
+| --- | --- |
+| ``` --h or help ``` | Help command |
+| ``` --l or list ``` | List all board ID and IP use in lab |
+| ``` -cID <boardID> or connectID <boardID> ``` | connect to board target</br> __range 1-5__ |
+| press "Ctrl+c" | Terminate program |
