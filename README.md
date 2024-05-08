@@ -46,3 +46,16 @@ python connectTool.py
 | ``` --l or list ``` | List all board ID and IP use in lab |
 | ``` -cID <boardID> or connectID <boardID> ``` | connect to board target</br> __range 1-5__ |
 | press "Ctrl+c" | Terminate program |
+
+### Packet/protocol
+
+| Header | Descriptions |
+| --- | --- |
+| ST | Start |
+| SP | Stop |
+
+| Format | ** ST,xx,xx,xx,xx,...,xx,xx,SP ** |
+| --- | --- |
+| Ex |ST,FFFFFF,F0001A,...,AD5900,SP |
+
+send in string format ***not hex*** via Telent port 7 only</br>

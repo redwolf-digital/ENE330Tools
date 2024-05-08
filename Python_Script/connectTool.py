@@ -93,11 +93,12 @@ def dashline() :
 #------------------------------------------------------------------------------------
 
 ipLUT = {
+        0 : "192.168.1.52",
         1 : "192.168.1.10",
         2 : "192.168.1.11",
         3 : "192.168.1.12",
         4 : "192.168.1.13",
-        5 : "192.168.1.14",
+        5 : "192.168.1.14"
 }
 
 memTemp = np.array([])      # data is here
@@ -119,30 +120,33 @@ def mainProcess(dataArrIn, boardTargetID_t) :
     # required data from Cora board and put it in buffer
     dataArrIn = np.empty((0, 0))            # clear buffer
     
-    # Telnet SEND RTS
-
-    # Telnet WAIT CTS
-
-    # Rx data from Cora
-
-    # process data
-
-    # test case add data to buffer
-    for i in range(max_buffsize) :
-        n = int(random.randint(0, 65535))
-        dataArrIn = np.append(dataArrIn, [n])
+    # Connect Telnet
+    ip = ipLUT[boardTargetID_t]
+    tn = telnetlib.Telnet(ip, 7, 1000) 
+    tn.open(ip, 7, 1000)
+    # Telnet SEND RTS code 
+    tn.write(b'g')
+    dataIn = tn.read_until(b"SP").decode('utf-8')
 
     print(f"[SYSTEM] -> OPERATOR REQ. ID {str(boardTargetID_t)} DONE")
 
-    plt.clf()
-    plt.title("Data of Board ID " + str(boardTargetID_t))
-    plt.xlabel("sample")
-    plt.ylabel("value of sample")
-    plt.xlim([0, max_buffsize])
+    dataArr = np.char.split(dataIn, sep=",")
+    dataArr = dataArr.tolist()
     
-    plt.plot(dataArrIn)
-    plt.pause(1)
+    if dataArr[len(dataArr)-1] == 'SP' :
+        dataArrIn = [int(x, 16) for x in dataArr[1:len(dataArr)-1]]
+        print(f"[SYSTEM] -> DUMP RAM :\n {str(dataArrIn)}")
 
+        plt.clf()
+        plt.title("Data of Board ID " + str(boardTargetID_t))
+        plt.xlabel("sample")
+        plt.ylabel("value of sample")
+        plt.xlim([0, max_buffsize])
+        
+        plt.plot(dataArrIn)
+        plt.pause(1)
+    else :
+        print("ERROR") 
     
 
 def main() :
@@ -164,7 +168,7 @@ def main() :
                 if commandInput == '--l' or commandInput == 'list' :
                     dashline()
                     for i in range(len(ipLUT)) :
-                        print(f"[board ID] {i+1} IP : {ipLUT[i+1]}")
+                        print(f"[board ID] {i} IP : {ipLUT[i]} @ PORT 7")
                     dashline()
 
                 # help
@@ -176,7 +180,7 @@ def main() :
                 # Connect board
                 elif comm_buff[0] == "-cID" or comm_buff[0] == "connectID" :
                     if isInt(comm_buff[1]) == True :
-                        if int(comm_buff[1]) > 0 and int(comm_buff[1]) <= 5 :
+                        if int(comm_buff[1]) >= 0 and int(comm_buff[1]) <= 5 :
                             boardTargetID = int(comm_buff[1])
                             connComplet = 1
                             print(textColor.WARNING + "[SYSTEM] -> EXIT COMMAND MODE\n----> PRESS \"Ctrl+C\" FOR EXIT PROGRAMS <----" + textColor.ENDC)
